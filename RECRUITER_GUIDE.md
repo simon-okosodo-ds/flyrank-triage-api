@@ -14,7 +14,7 @@ Many Machine Learning projects remain locked inside Jupyter Notebooks (`model.ip
 🌐 **Live API Docs:** [https://flyrank-triage-api.onrender.com/docs](https://flyrank-triage-api.onrender.com/docs)
 
 ### ⚖️ Honest Limitations & Engineering Tradeoffs
-- **Deployed Model Architecture**: The research paper's validated result (`Precision@50 = 0.820`) utilizes a 200-tree Random Forest. Due to free-tier hosting RAM boundaries (512MB limit on Render free plan), Logistic Regression was selected for production deployment — balancing memory stability with real-time API latency.
+- **Deployed Model Architecture**: The live deployment serves the full 200-tree Random Forest classifier (`RandomForestClassifier`, 200 decision trees) matching the research paper's validated results (`Precision@50 = 0.820`). Model binaries (166MB) are fetched dynamically at startup via Hugging Face Hub.
 - **Strict Data Integrity Enforcement**: Requests with `avg_position=0` or `impressions=0` are strictly rejected with an HTTP `422` validation error, preventing invalid inference on unranked pages.
 - **Cold Start Behavior**: Free-tier deployment spins down after 15 minutes of inactivity; initial requests after idle periods may experience a 30–60 second cold start.
 

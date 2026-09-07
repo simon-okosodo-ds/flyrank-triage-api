@@ -23,8 +23,8 @@ POST to `/score` with a page's features (`impressions`, `clicks`, `avg_position`
 
 ## ⚖️ Honest Limitations, Named Directly
 
-- **Deployed model is Logistic Regression, not the Random Forest reported in the research paper.**  
-  The paper's validated result (`Precision@50 = 0.820`, client-grouped split) uses a 200-tree Random Forest. That model's memory footprint exceeds free-tier hosting limits (512MB RAM on Render's free plan). Logistic Regression was chosen for deployment because it's lightweight and stable in memory — a standard, honest engineering tradeoff between research-grade accuracy and free-tier deployability.
+- **Deployed model matches the research paper (200-tree Random Forest).**  
+  The live API serves the full validated 200-tree Random Forest classifier (`Precision@50 = 0.820`, client-grouped split). To serve the 166MB model binary efficiently on free-tier containers, the server dynamically fetches model weights from Hugging Face Hub on startup.
 - **No-go checks are enforced, not just documented.**  
   `avg_position=0` and `impressions=0` are refused outright (`422` validation error) rather than scored, per the data-dictionary's warning that `avg_position=0` means "no data," not rank zero.
 - **This snapshot has no prior-period value at inference time**, so the diagnosis logic runs on the current values only — a real month-over-month diagnosis (as used in the paper) needs a prior window this simple endpoint doesn't yet accept as input.
