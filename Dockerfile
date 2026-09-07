@@ -2,21 +2,20 @@ FROM python:3.11-slim
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system build dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     && rm -rf /var/lib/apt/lists/*
 
-# Copy dependencies first for efficient caching
+# Copy requirements and install python dependencies (includes huggingface_hub)
 COPY requirements.txt .
-
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy application files and model
+# Copy application source code
 COPY . .
 
-# Expose default port (Hugging Face Spaces standard port is 7860)
-EXPOSE 7860
+# Render exposes and passes dynamic PORT environment variable at runtime (defaults to 10000)
+EXPOSE 10000
 
-# Command runs uvicorn using PORT env var if provided (Render), default 7860 (HF Spaces)
-CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-7860}"]
+# Bind Uvicorn to 0.0.0.0 and $PORT (Render requirement)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-10000}"]

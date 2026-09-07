@@ -8,11 +8,16 @@
 
 Many Machine Learning projects remain locked inside Jupyter Notebooks (`model.ipynb`). While notebook models prove accuracy, they cannot serve real-time predictions, integrate into automated data pipelines, or empower AI Agents to take action.
 
-**The Solution**: This project productionizes FlyRank's trained Random Forest classifier by wrapping it in a high-performance **FastAPI microservice** and providing an **MCP Agent Slot** for autonomous AI workflows.
+**The Solution**: This project productionizes FlyRank's trained SEO triage model by wrapping it in a high-performance **FastAPI microservice** and providing an **MCP Agent Slot** for autonomous AI workflows.
 
-Instead of reading static outputs from a CSV, marketing platforms and AI agents can query live Search Console metrics (`impressions`, `clicks`, `avg_position`, `in_striking_distance`, `has_real_volume`) to receive instant model probabilities, performance diagnoses, and actionable recommendations.
+📄 **Research Paper:** [https://simon-okosodo-ds.github.io/flyrank-ml-internship-starter/](https://simon-okosodo-ds.github.io/flyrank-ml-internship-starter/)  
+🌐 **Live API Docs:** [https://flyrank-triage-api.onrender.com/docs](https://flyrank-triage-api.onrender.com/docs)
 
----
+### ⚖️ Honest Limitations & Engineering Tradeoffs
+- **Deployed Model Architecture**: The research paper's validated result (`Precision@50 = 0.820`) utilizes a 200-tree Random Forest. Due to free-tier hosting RAM boundaries (512MB limit on Render free plan), Logistic Regression was selected for production deployment — balancing memory stability with real-time API latency.
+- **Strict Data Integrity Enforcement**: Requests with `avg_position=0` or `impressions=0` are strictly rejected with an HTTP `422` validation error, preventing invalid inference on unranked pages.
+- **Cold Start Behavior**: Free-tier deployment spins down after 15 minutes of inactivity; initial requests after idle periods may experience a 30–60 second cold start.
+
 
 ## 🛠️ System Architecture
 

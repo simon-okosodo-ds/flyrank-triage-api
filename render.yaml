@@ -1,13 +1,14 @@
 services:
   - type: web
     name: flyrank-triage-api
-    env: python
+    env: docker
     region: oregon
     plan: free
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    dockerfilePath: Dockerfile
     envVars:
-      - key: PYTHON_VERSION
-        value: 3.11.8
       - key: MODEL_PATH
         value: Flyrank.model.pkl
+      - key: HF_REPO_ID
+        value: simon-okosodo-ds/flyrank-triage-model
+      - key: MODEL_URL
+        value: https://github.com/simon-okosodo-ds/flyrank-triage-api/releases/download/v1.0.0/Flyrank.model.pkl

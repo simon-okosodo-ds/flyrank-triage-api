@@ -7,6 +7,7 @@ from pydantic import BaseModel, Field
 import joblib
 import pandas as pd
 import numpy as np
+from huggingface_hub import hf_hub_download
 
 app = FastAPI(
     title="FlyRank SEO Triage API & Interactive AI Engine",
@@ -28,20 +29,52 @@ app.add_middleware(
 )
 
 MODEL_PATH = os.getenv("MODEL_PATH", "Flyrank.model.pkl")
+HF_REPO_ID = os.getenv("HF_REPO_ID", "simon-okosodo-ds/flyrank-triage-model")
+MODEL_URL = os.getenv(
+    "MODEL_URL",
+    "https://github.com/simon-okosodo-ds/flyrank-triage-api/releases/download/v1.0.0/Flyrank.model.pkl"
+)
 
 model = None
+
+def fetch_model_file() -> str:
+    """Ensures a valid binary model file is available, downloading from Hugging Face Hub or CDN if needed."""
+    if os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) > 1000000:
+        return MODEL_PATH
+
+    print(f"Local model missing or LFS pointer file detected ({os.path.getsize(MODEL_PATH) if os.path.exists(MODEL_PATH) else 0} bytes). Fetching binary...")
+    
+    # 1. Primary: Hugging Face Hub Download
+    try:
+        downloaded = hf_hub_download(repo_id=HF_REPO_ID, filename="Flyrank.model.pkl")
+        print(f"Successfully fetched model from Hugging Face Hub: {downloaded}")
+        return downloaded
+    except Exception as e1:
+        print(f"Hugging Face Hub fetch attempt: {e1}")
+
+    # 2. Fallback: Direct Release CDN Download
+    try:
+        import urllib.request
+        print(f"Downloading model binary from release CDN: {MODEL_URL}")
+        urllib.request.urlretrieve(MODEL_URL, MODEL_PATH)
+        print(f"Downloaded model to {MODEL_PATH} ({os.path.getsize(MODEL_PATH)} bytes)")
+        return MODEL_PATH
+    except Exception as e2:
+        print(f"CDN download attempt failed: {e2}")
+        return MODEL_PATH
 
 @app.on_event("startup")
 def load_model():
     global model
-    if os.path.exists(MODEL_PATH):
+    model_file_to_load = fetch_model_file()
+    if os.path.exists(model_file_to_load) and os.path.getsize(model_file_to_load) > 1000000:
         try:
-            model = joblib.load(MODEL_PATH)
-            print(f"Successfully loaded model from {MODEL_PATH}")
+            model = joblib.load(model_file_to_load)
+            print(f"Successfully loaded Random Forest model from {model_file_to_load}")
         except Exception as e:
-            print(f"Error loading model from {MODEL_PATH}: {e}")
+            print(f"Error unpickling model from {model_file_to_load}: {e}")
     else:
-        print(f"Warning: Model file not found at {MODEL_PATH}")
+        print(f"Warning: Model file not ready or invalid size at {model_file_to_load}")
 
 class PageInput(BaseModel):
     impressions: float = Field(..., ge=0, description="Monthly GSC impressions count")
@@ -111,6 +144,38 @@ def health_check():
         "outputs": ["model_score", "diagnosis", "action"],
         "docs_url": "/docs"
     }
+
+@app.get("/score", summary="Score page via GET query parameters or view instructions")
+def score_page_get(
+    impressions: Optional[float] = None,
+    clicks: Optional[float] = None,
+    avg_position: Optional[float] = None,
+    in_striking_distance: int = 1,
+    has_real_volume: int = 1,
+    impressions_prior: Optional[float] = None,
+    clicks_prior: Optional[float] = None,
+):
+    """Allows testing /score in browser via query parameters or provides helpful instructions."""
+    if impressions is None or clicks is None or avg_position is None:
+        return {
+            "status": "info",
+            "message": "The /score endpoint accepts POST requests with a JSON body, or GET requests with query parameters.",
+            "interactive_dashboard": "/",
+            "swagger_docs": "/docs",
+            "example_get_url": "/score?impressions=450&clicks=12&avg_position=14.2&in_striking_distance=1&has_real_volume=1",
+            "example_curl_post": "curl -X POST 'https://flyrank-triage-api.onrender.com/score' -H 'Content-Type: application/json' -d '{\"impressions\":450,\"clicks\":12,\"avg_position\":14.2,\"in_striking_distance\":1,\"has_real_volume\":1}'"
+        }
+    
+    page = PageInput(
+        impressions=impressions,
+        clicks=clicks,
+        avg_position=avg_position,
+        in_striking_distance=in_striking_distance,
+        has_real_volume=has_real_volume,
+        impressions_prior=impressions_prior,
+        clicks_prior=clicks_prior,
+    )
+    return score_page(page)
 
 @app.post("/score", response_model=TriageResponse, summary="Score single page SEO triage request")
 def score_page(page: PageInput):
@@ -234,7 +299,6 @@ def serve_dashboard():
         .btn-submit { width: 100%; background: linear-gradient(135deg, #2563eb, #7c3aed); border: none; color: white; padding: 0.85rem; border-radius: 10px; font-size: 1rem; font-weight: 600; cursor: pointer; transition: 0.2s; box-shadow: 0 4px 15px var(--accent-glow); margin-top: 0.5rem; }
         .btn-submit:hover { opacity: 0.95; transform: translateY(-1px); }
 
-        /* Output Card Styling */
         .score-box { text-align: center; padding: 1.5rem 0; }
         .meter-circle { width: 130px; height: 130px; border-radius: 50%; background: radial-gradient(closest-side, var(--panel) 79%, transparent 80% 100%), conic-gradient(var(--accent) calc(var(--score-pct) * 1%), var(--panel-border) 0); margin: 0 auto 1rem auto; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 20px var(--accent-glow); transition: 0.5s ease-out; }
         .score-val { font-size: 1.8rem; font-weight: 700; }
@@ -271,11 +335,10 @@ def serve_dashboard():
         </header>
 
         <div class="main-grid">
-            <!-- Left Input Card -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">1. Search Performance Inputs</div>
-                    <span style="font-size:0.75rem; color:var(--success);">● Model Loaded</span>
+                    <span style="font-size:0.75rem; color:var(--success);">● Model Live</span>
                 </div>
 
                 <div class="presets">
@@ -314,7 +377,6 @@ def serve_dashboard():
                 </form>
             </div>
 
-            <!-- Right Results Card -->
             <div class="card">
                 <div class="card-header">
                     <div class="card-title">2. Live Model Output & Action</div>
@@ -346,7 +408,7 @@ def serve_dashboard():
                 </div>
 
                 <div class="code-box" id="codeSnippet">
-curl -X POST "http://127.0.0.1:8000/score" -H "Content-Type: application/json" -d '{"impressions":450,"clicks":12,"avg_position":14.2,"in_striking_distance":1,"has_real_volume":1}'
+curl -X POST "https://flyrank-triage-api.onrender.com/score" -H "Content-Type: application/json" -d '{"impressions":450,"clicks":12,"avg_position":14.2,"in_striking_distance":1,"has_real_volume":1}'
                 </div>
             </div>
         </div>
@@ -412,7 +474,7 @@ curl -X POST "http://127.0.0.1:8000/score" -H "Content-Type: application/json" -
                     document.getElementById('ctrVal').innerText = (data.details.ctr * 100).toFixed(2) + '%';
 
                     document.getElementById('codeSnippet').innerText = 
-                        `curl -X POST "https://simon-okosodo-ds-flyrank-triage-api.hf.space/score" -H "Content-Type: application/json" -d '${JSON.stringify(body)}'`;
+                        `curl -X POST "https://flyrank-triage-api.onrender.com/score" -H "Content-Type: application/json" -d '${JSON.stringify(body)}'`;
                 } else {
                     alert("Validation Error: " + (data.detail || "Invalid input"));
                 }
