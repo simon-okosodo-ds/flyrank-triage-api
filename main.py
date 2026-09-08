@@ -28,7 +28,8 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_PATH = os.getenv("MODEL_PATH", "Flyrank_lr.pkl")
+MODEL_PATH = os.getenv("MODEL_PATH", "model.pkl" if os.path.exists("model.pkl") else "Flyrank_lr.pkl")
+SCALER_PATH = os.getenv("SCALER_PATH", "scaler.pkl")
 HF_REPO_ID = os.getenv("HF_REPO_ID", "simon-okosodo-ds/flyrank-triage-model")
 MODEL_URL = os.getenv(
     "MODEL_URL",
@@ -36,6 +37,7 @@ MODEL_URL = os.getenv(
 )
 
 model = None
+scaler = None
 
 def fetch_model_file() -> str:
     """Ensures a valid binary model file is available, downloading from Hugging Face Hub or CDN if needed."""
@@ -65,7 +67,7 @@ def fetch_model_file() -> str:
 
 @app.on_event("startup")
 def load_model():
-    global model
+    global model, scaler
     model_file_to_load = fetch_model_file()
     if os.path.exists(model_file_to_load) and os.path.getsize(model_file_to_load) > 100:
         try:
@@ -75,6 +77,15 @@ def load_model():
             print(f"Error unpickling model from {model_file_to_load}: {e}")
     else:
         print(f"Warning: Model file not ready or invalid size at {model_file_to_load}")
+
+    if os.path.exists(SCALER_PATH) and os.path.getsize(SCALER_PATH) > 100:
+        try:
+            scaler = joblib.load(SCALER_PATH)
+            print(f"Successfully loaded {type(scaler).__name__} scaler from {SCALER_PATH}")
+        except Exception as e:
+            print(f"Error unpickling scaler from {SCALER_PATH}: {e}")
+    else:
+        print(f"Note: Scaler file not present or unneeded at {SCALER_PATH}")
 
 class PageInput(BaseModel):
     impressions: float = Field(..., ge=0, description="Monthly GSC impressions count")
@@ -135,7 +146,7 @@ def compute_diagnosis(
 
 @app.get("/model-info", summary="Inspect live model class and ensemble metadata")
 def model_info():
-    """Live debug endpoint exposing exact model type and n_estimators attribute."""
+    """Live debug endpoint exposing exact model type, scaler, and feature metadata."""
     if model is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -144,11 +155,11 @@ def model_info():
     return {
         "model_type": type(model).__name__,
         "model_class": str(type(model)),
-        "n_estimators": getattr(model, "n_estimators", None),
+        "scaler_loaded": scaler is not None,
+        "scaler_type": type(scaler).__name__ if scaler else None,
         "n_features_in": getattr(model, "n_features_in_", None),
         "classes": getattr(model, "classes_", None).tolist() if hasattr(model, "classes_") else None,
         "is_logistic_regression": type(model).__name__ == "LogisticRegression",
-        "is_random_forest": type(model).__name__ == "RandomForestClassifier",
     }
 
 @app.get("/api/v1/health", summary="Health and Service Metadata")
@@ -157,7 +168,9 @@ def health_check():
         "status": "live",
         "service": "FlyRank SEO Triage API",
         "model_loaded": model is not None,
+        "scaler_loaded": scaler is not None,
         "model_type": type(model).__name__ if model else "Not Loaded",
+        "scaler_type": type(scaler).__name__ if scaler else "None",
         "features": ["impressions", "clicks", "avg_position", "in_striking_distance", "has_real_volume"],
         "outputs": ["model_score", "diagnosis", "action"],
         "docs_url": "/docs"
@@ -222,10 +235,12 @@ def score_page(page: PageInput):
     }])
 
     try:
-        proba = model.predict_proba(features_df)[:, 1][0]
+        X_scaled = scaler.transform(features_df) if scaler is not None else features_df
+        proba = model.predict_proba(X_scaled)[:, 1][0]
         model_score = round(float(proba), 3)
     except Exception:
-        proba = model.predict_proba(features_df.values)[:, 1][0]
+        X_scaled = scaler.transform(features_df.values) if scaler is not None else features_df.values
+        proba = model.predict_proba(X_scaled)[:, 1][0]
         model_score = round(float(proba), 3)
 
     ctr = page.clicks / page.impressions if page.impressions > 0 else 0.0

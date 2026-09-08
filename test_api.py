@@ -17,6 +17,8 @@ def test_model_file_exists():
 def test_model_loading_and_prediction():
     """Verify model unpickling and direct prediction."""
     model = joblib.load(MODEL_PATH)
+    scaler_path = getattr(main, "SCALER_PATH", "scaler.pkl")
+    scaler = joblib.load(scaler_path) if os.path.exists(scaler_path) else None
     sample_df = pd.DataFrame([{
         "impressions": 500.0,
         "clicks": 15.0,
@@ -24,7 +26,8 @@ def test_model_loading_and_prediction():
         "in_striking_distance": 1,
         "has_real_volume": 1
     }])
-    proba = model.predict_proba(sample_df)[:, 1][0]
+    X_pred = scaler.transform(sample_df) if scaler is not None else sample_df
+    proba = model.predict_proba(X_pred)[:, 1][0]
     assert 0.0 <= proba <= 1.0, f"Probability out of range: {proba}"
     print(f"[OK] Direct model test passed. Sample prediction proba: {proba:.4f}")
 
