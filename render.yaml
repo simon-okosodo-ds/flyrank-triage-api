@@ -7,7 +7,7 @@ services:
     dockerfilePath: Dockerfile
     envVars:
       - key: MODEL_PATH
-        value: Flyrank.model.pkl
+        value: Flyrank_50trees.pkl
       - key: HF_REPO_ID
         value: simon-okosodo-ds/flyrank-triage-model
       - key: MODEL_URL

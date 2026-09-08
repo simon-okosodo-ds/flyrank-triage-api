@@ -1,5 +1,6 @@
 Flyrank.model.pkl
 *.pkl
+!Flyrank_50trees.pkl
 __pycache__/
 *.py[cod]
 *$py.class
@@ -10,3 +11,4 @@ venv/
 ENV/
 *.log
 .DS_Store
+

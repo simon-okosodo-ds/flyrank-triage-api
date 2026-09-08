@@ -28,7 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_PATH = os.getenv("MODEL_PATH", "Flyrank.model.pkl")
+MODEL_PATH = os.getenv("MODEL_PATH", "Flyrank_50trees.pkl" if os.path.exists("Flyrank_50trees.pkl") else "Flyrank.model.pkl")
 HF_REPO_ID = os.getenv("HF_REPO_ID", "simon-okosodo-ds/flyrank-triage-model")
 MODEL_URL = os.getenv(
     "MODEL_URL",
@@ -66,10 +66,16 @@ def fetch_model_file() -> str:
 @app.on_event("startup")
 def load_model():
     global model
+    import gc
     model_file_to_load = fetch_model_file()
     if os.path.exists(model_file_to_load) and os.path.getsize(model_file_to_load) > 1000000:
         try:
             model = joblib.load(model_file_to_load)
+            if hasattr(model, "estimators_") and len(model.estimators_) > 50:
+                model.estimators_ = model.estimators_[:50]
+                model.n_estimators = len(model.estimators_)
+                gc.collect()
+                print(f"Optimized Random Forest to {model.n_estimators} trees for 512MB RAM container safety.")
             print(f"Successfully loaded Random Forest model from {model_file_to_load}")
         except Exception as e:
             print(f"Error unpickling model from {model_file_to_load}: {e}")
