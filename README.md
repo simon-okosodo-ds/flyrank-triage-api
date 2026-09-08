@@ -23,8 +23,8 @@ POST to `/score` with a page's features (`impressions`, `clicks`, `avg_position`
 
 ## ⚖️ Honest Limitations, Named Directly
 
-- **Deployed model matches the research paper (200-tree Random Forest).**  
-  The live API serves the full validated 200-tree Random Forest classifier (`Precision@50 = 0.820`, client-grouped split). To serve the 166MB model binary efficiently on free-tier containers, the server dynamically fetches model weights from Hugging Face Hub on startup.
+- **Deployed container uses lightweight Logistic Regression model (`Flyrank_lr.pkl`).**  
+  The live API serves the calibrated Logistic Regression model binary (`1.2 KB`) bundled directly with the repository, ensuring zero OOM errors and instant startup on Render Free Tier (<20MB RAM).
 - **No-go checks are enforced, not just documented.**  
   `avg_position=0` and `impressions=0` are refused outright (`422` validation error) rather than scored, per the data-dictionary's warning that `avg_position=0` means "no data," not rank zero.
 - **This snapshot has no prior-period value at inference time**, so the diagnosis logic runs on the current values only — a real month-over-month diagnosis (as used in the paper) needs a prior window this simple endpoint doesn't yet accept as input.

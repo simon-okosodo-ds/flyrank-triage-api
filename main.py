@@ -28,7 +28,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_PATH = os.getenv("MODEL_PATH", "Flyrank_50trees.pkl" if os.path.exists("Flyrank_50trees.pkl") else "Flyrank.model.pkl")
+MODEL_PATH = os.getenv("MODEL_PATH", "Flyrank_lr.pkl" if os.path.exists("Flyrank_lr.pkl") else ("Flyrank_50trees.pkl" if os.path.exists("Flyrank_50trees.pkl") else "Flyrank.model.pkl"))
 HF_REPO_ID = os.getenv("HF_REPO_ID", "simon-okosodo-ds/flyrank-triage-model")
 MODEL_URL = os.getenv(
     "MODEL_URL",
@@ -39,10 +39,10 @@ model = None
 
 def fetch_model_file() -> str:
     """Ensures a valid binary model file is available, downloading from Hugging Face Hub or CDN if needed."""
-    if os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) > 1000000:
+    if os.path.exists(MODEL_PATH) and os.path.getsize(MODEL_PATH) > 100:
         return MODEL_PATH
 
-    print(f"Local model missing or LFS pointer file detected ({os.path.getsize(MODEL_PATH) if os.path.exists(MODEL_PATH) else 0} bytes). Fetching binary...")
+    print(f"Local model missing or invalid ({os.path.getsize(MODEL_PATH) if os.path.exists(MODEL_PATH) else 0} bytes). Fetching binary...")
     
     # 1. Primary: Hugging Face Hub Download
     try:
@@ -68,7 +68,7 @@ def load_model():
     global model
     import gc
     model_file_to_load = fetch_model_file()
-    if os.path.exists(model_file_to_load) and os.path.getsize(model_file_to_load) > 1000000:
+    if os.path.exists(model_file_to_load) and os.path.getsize(model_file_to_load) > 100:
         try:
             model = joblib.load(model_file_to_load)
             if hasattr(model, "estimators_") and len(model.estimators_) > 50:
@@ -76,7 +76,7 @@ def load_model():
                 model.n_estimators = len(model.estimators_)
                 gc.collect()
                 print(f"Optimized Random Forest to {model.n_estimators} trees for 512MB RAM container safety.")
-            print(f"Successfully loaded Random Forest model from {model_file_to_load}")
+            print(f"Successfully loaded {type(model).__name__} model from {model_file_to_load}")
         except Exception as e:
             print(f"Error unpickling model from {model_file_to_load}: {e}")
     else:
@@ -153,6 +153,7 @@ def model_info():
         "n_estimators": getattr(model, "n_estimators", None),
         "n_features_in": getattr(model, "n_features_in_", None),
         "classes": getattr(model, "classes_", None).tolist() if hasattr(model, "classes_") else None,
+        "is_logistic_regression": type(model).__name__ == "LogisticRegression",
         "is_random_forest": type(model).__name__ == "RandomForestClassifier",
     }
 
@@ -160,7 +161,7 @@ def model_info():
 def health_check():
     return {
         "status": "live",
-        "service": "FlyRank Random Forest SEO Triage API",
+        "service": "FlyRank SEO Triage API",
         "model_loaded": model is not None,
         "model_type": type(model).__name__ if model else "Not Loaded",
         "features": ["impressions", "clicks", "avg_position", "in_striking_distance", "has_real_volume"],
