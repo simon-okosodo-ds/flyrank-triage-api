@@ -11,4 +11,4 @@ services:
       - key: HF_REPO_ID
         value: simon-okosodo-ds/flyrank-triage-model
       - key: MODEL_URL
-        value: https://github.com/simon-okosodo-ds/flyrank-triage-api/releases/download/v1.0.0/Flyrank.model.pkl
+        value: https://github.com/simon-okosodo-ds/flyrank-triage-api/releases/download/v1.0.0/Flyrank_lr.pkl

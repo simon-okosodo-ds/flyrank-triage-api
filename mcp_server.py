@@ -1,6 +1,6 @@
 """
 FlyRank Model Context Protocol (MCP) Server
-Exposes the FlyRank Random Forest SEO Triage model as an MCP Tool for AI Agents.
+Exposes the FlyRank Logistic Regression SEO Triage model as an MCP Tool for AI Agents.
 """
 
 import sys
@@ -26,7 +26,7 @@ if HAS_FASTMCP:
     @mcp.tool(
         name="flyrank_triage_page",
         description=(
-            "Evaluates SEO performance of a web page using FlyRank's Random Forest classifier. "
+            "Evaluates SEO performance of a web page using FlyRank's Logistic Regression classifier. "
             "Inputs GSC impressions, clicks, avg_position, in_striking_distance (0/1), and has_real_volume (0/1). "
             "Returns model_score, performance diagnosis, and actionable content decision."
         )

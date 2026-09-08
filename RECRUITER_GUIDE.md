@@ -1,6 +1,6 @@
 # 🚀 FlyRank SEO Triage API & MCP Agent Node: Recruiter & Engineering Guide
 
-> **Portfolio Highlight**: Converting an offline trained Random Forest model (`Flyrank.model.pkl`) into a live, production REST API and an executable **Model Context Protocol (MCP)** tool slot for AI Agents.
+> **Portfolio Highlight**: Converting an offline trained Logistic Regression model (`Flyrank_lr.pkl`, 1.2 KB) into a live, production REST API and an executable **Model Context Protocol (MCP)** tool slot for AI Agents.
 
 ---
 
@@ -14,7 +14,7 @@ Many Machine Learning projects remain locked inside Jupyter Notebooks (`model.ip
 🌐 **Live API Docs:** [https://flyrank-triage-api.onrender.com/docs](https://flyrank-triage-api.onrender.com/docs)
 
 ### ⚖️ Honest Limitations & Engineering Tradeoffs
-- **Deployed Model Architecture**: The live deployment serves the full 200-tree Random Forest classifier (`RandomForestClassifier`, 200 decision trees) matching the research paper's validated results (`Precision@50 = 0.820`). Model binaries (166MB) are fetched dynamically at startup via Hugging Face Hub.
+- **Deployed Model Architecture**: The live deployment serves the lightweight Logistic Regression classifier (`Flyrank_lr.pkl`, 1.2 KB) for zero-OOM Render container safety (<20MB RAM consumption).
 - **Strict Data Integrity Enforcement**: Requests with `avg_position=0` or `impressions=0` are strictly rejected with an HTTP `422` validation error, preventing invalid inference on unranked pages.
 - **Cold Start Behavior**: Free-tier deployment spins down after 15 minutes of inactivity; initial requests after idle periods may experience a 30–60 second cold start.
 
@@ -27,7 +27,7 @@ graph TD
     C[AI Agent / Claude / LangChain] -->|MCP Tool Protocol| D[MCP Server mcp_server.py]
     D --> B
     B --> E[Pydantic Schema Validation]
-    E --> F[Random Forest Classifier Flyrank.model.pkl]
+    E --> F[Logistic Regression Classifier Flyrank_lr.pkl]
     F -->|predict_proba| G[Model Score Calculation]
     G --> H[Diagnostic Engine & Action Mapper]
     H -->|JSON Response| I[model_score + diagnosis + action]

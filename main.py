@@ -12,7 +12,7 @@ from huggingface_hub import hf_hub_download
 app = FastAPI(
     title="FlyRank SEO Triage API & Interactive AI Engine",
     description=(
-        "Live model serving endpoint for FlyRank's trained Random Forest classifier. "
+        "Live model serving endpoint for FlyRank's trained Logistic Regression classifier. "
         "Transforms Search Console metrics into real-time content triage decisions."
     ),
     version="1.0.0",
@@ -28,11 +28,11 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-MODEL_PATH = os.getenv("MODEL_PATH", "Flyrank_lr.pkl" if os.path.exists("Flyrank_lr.pkl") else ("Flyrank_50trees.pkl" if os.path.exists("Flyrank_50trees.pkl") else "Flyrank.model.pkl"))
+MODEL_PATH = os.getenv("MODEL_PATH", "Flyrank_lr.pkl")
 HF_REPO_ID = os.getenv("HF_REPO_ID", "simon-okosodo-ds/flyrank-triage-model")
 MODEL_URL = os.getenv(
     "MODEL_URL",
-    "https://github.com/simon-okosodo-ds/flyrank-triage-api/releases/download/v1.0.0/Flyrank.model.pkl"
+    "https://github.com/simon-okosodo-ds/flyrank-triage-api/releases/download/v1.0.0/Flyrank_lr.pkl"
 )
 
 model = None
@@ -46,7 +46,7 @@ def fetch_model_file() -> str:
     
     # 1. Primary: Hugging Face Hub Download
     try:
-        downloaded = hf_hub_download(repo_id=HF_REPO_ID, filename="Flyrank.model.pkl")
+        downloaded = hf_hub_download(repo_id=HF_REPO_ID, filename="Flyrank_lr.pkl")
         print(f"Successfully fetched model from Hugging Face Hub: {downloaded}")
         return downloaded
     except Exception as e1:
@@ -66,16 +66,10 @@ def fetch_model_file() -> str:
 @app.on_event("startup")
 def load_model():
     global model
-    import gc
     model_file_to_load = fetch_model_file()
     if os.path.exists(model_file_to_load) and os.path.getsize(model_file_to_load) > 100:
         try:
             model = joblib.load(model_file_to_load)
-            if hasattr(model, "estimators_") and len(model.estimators_) > 50:
-                model.estimators_ = model.estimators_[:50]
-                model.n_estimators = len(model.estimators_)
-                gc.collect()
-                print(f"Optimized Random Forest to {model.n_estimators} trees for 512MB RAM container safety.")
             print(f"Successfully loaded {type(model).__name__} model from {model_file_to_load}")
         except Exception as e:
             print(f"Error unpickling model from {model_file_to_load}: {e}")
@@ -106,7 +100,7 @@ class PageInput(BaseModel):
         }
 
 class TriageResponse(BaseModel):
-    model_score: float = Field(..., description="Random Forest probability score (0.0 - 1.0) indicating page improvement likelihood")
+    model_score: float = Field(..., description="Logistic Regression probability score (0.0 - 1.0) indicating page improvement likelihood")
     diagnosis: str = Field(..., description="Diagnostic classification of page performance")
     action: str = Field(..., description="Recommended content action")
     details: dict = Field(..., description="Additional calculated metrics and context")
@@ -349,7 +343,7 @@ def serve_dashboard():
                 <div class="logo-icon">🚀</div>
                 <div>
                     <div class="title-h1">FlyRank AI SEO Triage Engine</div>
-                    <div class="subtitle">Live Random Forest Serving Endpoint & MCP Agent Node</div>
+                    <div class="subtitle">Live Logistic Regression Serving Endpoint & MCP Agent Node</div>
                 </div>
             </div>
             <div class="nav-links">
