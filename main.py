@@ -146,7 +146,7 @@ def compute_diagnosis(
 
 @app.get("/model-info", summary="Inspect live model class and ensemble metadata")
 def model_info():
-    """Live debug endpoint exposing exact model type, scaler, and feature metadata."""
+    """Live debug endpoint exposing exact model type, n_estimators, and scaler metadata."""
     if model is None:
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -155,11 +155,13 @@ def model_info():
     return {
         "model_type": type(model).__name__,
         "model_class": str(type(model)),
+        "n_estimators": getattr(model, "n_estimators", None),
         "scaler_loaded": scaler is not None,
         "scaler_type": type(scaler).__name__ if scaler else None,
         "n_features_in": getattr(model, "n_features_in_", None),
         "classes": getattr(model, "classes_", None).tolist() if hasattr(model, "classes_") else None,
         "is_logistic_regression": type(model).__name__ == "LogisticRegression",
+        "is_random_forest": type(model).__name__ == "RandomForestClassifier",
     }
 
 @app.get("/api/v1/health", summary="Health and Service Metadata")
