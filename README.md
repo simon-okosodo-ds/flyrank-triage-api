@@ -86,7 +86,11 @@ To run the Model Context Protocol server for AI Agents (Claude Desktop, Gemini, 
 ```bash
 python mcp_server.py
 ```
-This exposes the tool `flyrank_triage_page` for agent invocation. See [RECRUITER_GUIDE.md](RECRUITER_GUIDE.md) for full architecture details.
+To test the standalone MCP CLI sample mode locally:
+```bash
+python mcp_server.py --cli --sample
+```
+This exposes the tool `flyrank_triage_page` for agent invocation, which evaluates page performance metrics (`impressions`, `clicks`, `avg_position`, `in_striking_distance`, `has_real_volume`) and returns structured triage responses (`model_score`, `diagnosis`, `action`). See [RECRUITER_GUIDE.md](RECRUITER_GUIDE.md) for full architecture details.
 
 ---
 

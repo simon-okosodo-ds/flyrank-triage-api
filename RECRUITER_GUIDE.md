@@ -61,7 +61,7 @@ graph TD
 4. The agent receives the response:
    ```json
    {
-     "model_score": 0.742,
+     "model_score": 0.54,
      "diagnosis": "ctr_fixable",
      "action": "review_title_and_meta"
    }

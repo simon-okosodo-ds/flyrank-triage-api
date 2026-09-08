@@ -50,7 +50,7 @@ if HAS_FASTMCP:
             clicks_prior=clicks_prior
         )
         res = score_page(input_data)
-        return res.dict()
+        return res.model_dump() if hasattr(res, "model_dump") else res.dict()
 
 def run_standalone_agent_cli():
     """Fallback CLI mode for testing MCP / agent execution directly via stdin/stdout."""
@@ -60,7 +60,7 @@ def run_standalone_agent_cli():
         "description": "FlyRank SEO Triage Agent Tool active."
     }))
     
-    if len(sys.argv) > 1 and sys.argv[1] == "--sample":
+    if "--sample" in sys.argv:
         sample_input = PageInput(
             impressions=320.0,
             clicks=8.0,
@@ -69,8 +69,9 @@ def run_standalone_agent_cli():
             has_real_volume=1
         )
         res = score_page(sample_input)
+        res_dict = res.model_dump() if hasattr(res, "model_dump") else res.dict()
         print("Sample Execution Result:")
-        print(json.dumps(res.dict(), indent=2))
+        print(json.dumps(res_dict, indent=2))
 
 if __name__ == "__main__":
     if HAS_FASTMCP and "--cli" not in sys.argv:
