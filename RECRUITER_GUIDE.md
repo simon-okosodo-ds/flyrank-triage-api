@@ -1,6 +1,6 @@
 # 🚀 FlyRank SEO Triage API & MCP Agent Node: Recruiter & Engineering Guide
 
-> **Portfolio Highlight**: Converting an offline trained Logistic Regression model (`Flyrank_lr.pkl`, 1.2 KB) into a live, production REST API and an executable **Model Context Protocol (MCP)** tool slot for AI Agents.
+> **Portfolio Highlight**: Converting an offline trained Logistic Regression model (`model.pkl` + `scaler.pkl`, 1.6 KB) into a live, production REST API and an executable **Model Context Protocol (MCP)** tool slot for AI Agents.
 
 ---
 
@@ -14,7 +14,7 @@ Many Machine Learning projects remain locked inside Jupyter Notebooks (`model.ip
 🌐 **Live API Docs:** [https://flyrank-triage-api.onrender.com/docs](https://flyrank-triage-api.onrender.com/docs)
 
 ### ⚖️ Honest Limitations & Engineering Tradeoffs
-- **Deployed Model Architecture**: The live deployment serves the lightweight Logistic Regression classifier (`Flyrank_lr.pkl`, 1.2 KB) for zero-OOM Render container safety (<20MB RAM consumption).
+- **Deployed Model Architecture**: The live production deployment serves the lightweight Logistic Regression classifier (`model.pkl` + `scaler.pkl`, 1.6 KB total) for zero-OOM Render container safety (<20MB RAM consumption). The 200-tree Random Forest classifier (`n_estimators=200`, `Precision@50 = 0.820`) remains the offline benchmark validated in the research paper.
 - **Strict Data Integrity Enforcement**: Requests with `avg_position=0` or `impressions=0` are strictly rejected with an HTTP `422` validation error, preventing invalid inference on unranked pages.
 - **Cold Start Behavior**: Free-tier deployment spins down after 15 minutes of inactivity; initial requests after idle periods may experience a 30–60 second cold start.
 
@@ -27,7 +27,7 @@ graph TD
     C[AI Agent / Claude / LangChain] -->|MCP Tool Protocol| D[MCP Server mcp_server.py]
     D --> B
     B --> E[Pydantic Schema Validation]
-    E --> F[Logistic Regression Classifier Flyrank_lr.pkl]
+    E --> F[Logistic Regression Classifier model.pkl + scaler.pkl]
     F -->|predict_proba| G[Model Score Calculation]
     G --> H[Diagnostic Engine & Action Mapper]
     H -->|JSON Response| I[model_score + diagnosis + action]
@@ -43,7 +43,7 @@ graph TD
 | `has_real_volume` | `int` | Binary flag (1 if impressions >= 100, else 0) |
 
 ### 2. Output Schema
-- **`model_score`**: Random Forest probability score (0.0 to 1.0) indicating page improvement likelihood.
+- **`model_score`**: Logistic Regression probability score (0.0 to 1.0) indicating page improvement likelihood.
 - **`diagnosis`**: Diagnostic categorization (`genuine_decline`, `likely_serp_answered`, `ctr_fixable`, `stable_or_improving`).
 - **`action`**: Prescriptive content action (`refresh_or_rewrite`, `flag_for_human_review_only`, `review_title_and_meta`, `no_action`).
 
@@ -103,7 +103,7 @@ This repository is optimized for 100% free deployment on **Hugging Face Spaces**
 ## 🔑 Recruiter Talking Points for Interviews
 
 When presenting this project to hiring managers or recruiters, highlight:
-1. **End-to-End ML Pipeline**: "I took a trained Random Forest model from a Jupyter notebook and transformed it into a production-grade microservice with input validation, error handling, and automated tests."
+1. **End-to-End ML Pipeline & Cloud Tradeoffs**: "I took an offline trained triage model from a Jupyter notebook and transformed it into a production-grade microservice. For Render free-tier deployment, I deployed a calibrated Logistic Regression model with StandardScaler for zero-OOM memory safety (<20MB RAM), while documenting the 200-tree Random Forest as the offline research benchmark."
 2. **Modern API Architecture**: "Built with FastAPI and Pydantic v2, serving predictions with sub-20ms latency and interactive Swagger documentation."
 3. **Agentic AI & Tool Integration**: "Implemented an MCP (Model Context Protocol) server slot, enabling LLMs like Claude and custom AI agents to invoke the model programmatically as a decision tool."
 4. **Cost-Effective Cloud Engineering**: "Configured multi-platform free-tier deployments using Docker, Git LFS, and infrastructure-as-code (`render.yaml`)."

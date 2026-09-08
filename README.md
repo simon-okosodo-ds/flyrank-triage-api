@@ -23,8 +23,10 @@ POST to `/score` with a page's features (`impressions`, `clicks`, `avg_position`
 
 ## ⚖️ Honest Limitations, Named Directly
 
-- **Deployed container uses lightweight Logistic Regression model (`Flyrank_lr.pkl`).**  
-  The live API serves the calibrated Logistic Regression model binary (`1.2 KB`) bundled directly with the repository, ensuring zero OOM errors and instant startup on Render Free Tier (<20MB RAM).
+- **Deployed container uses lightweight Logistic Regression model (`model.pkl` & `scaler.pkl`).**  
+  The live API serves the calibrated Logistic Regression model and `StandardScaler` binary (`1.6 KB` total) bundled directly with the repository, ensuring zero OOM errors and instant startup on Render Free Tier (<20MB RAM).
+- **Research Benchmark vs. Production Serving**:  
+  While the offline research paper validates a 200-tree Random Forest classifier (`n_estimators=200`, `Precision@50 = 0.820`), deploying a 166 MB Random Forest model on Render free-tier exceeds the 512 MB RAM limit. The calibrated Logistic Regression model is deployed for production container safety, while Random Forest remains the validated research result in the paper.
 - **No-go checks are enforced, not just documented.**  
   `avg_position=0` and `impressions=0` are refused outright (`422` validation error) rather than scored, per the data-dictionary's warning that `avg_position=0` means "no data," not rank zero.
 - **This snapshot has no prior-period value at inference time**, so the diagnosis logic runs on the current values only — a real month-over-month diagnosis (as used in the paper) needs a prior window this simple endpoint doesn't yet accept as input.
