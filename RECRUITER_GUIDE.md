@@ -101,9 +101,8 @@ This repository is optimized for 100% free deployment on **Hugging Face Spaces**
 
 ---
 
-## 🔑 Recruiter Talking Points for Interviews
+## 🔑 Conclusion
 
-When presenting this project to hiring managers or recruiters, highlight:
 1. **End-to-End ML Pipeline & Cloud Tradeoffs**: "I took an offline trained triage model from a Jupyter notebook and transformed it into a production-grade microservice. For Render free-tier deployment, I deployed a calibrated Logistic Regression model with StandardScaler for zero-OOM memory safety (<20MB RAM), while documenting the 200-tree Random Forest as the offline research benchmark."
 2. **Modern API Architecture**: "Built with FastAPI and Pydantic v2, serving predictions with sub-20ms latency and interactive Swagger documentation."
 3. **Agentic AI & Tool Integration**: "Implemented an MCP (Model Context Protocol) server slot, enabling LLMs like Claude and custom AI agents to invoke the model programmatically as a decision tool."
