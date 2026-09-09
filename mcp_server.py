@@ -9,10 +9,10 @@ import asyncio
 from typing import Dict, Any
 
 try:
-    from mcp.server.fastmcp import FastMCP
-    HAS_FASTMCP = True
+    from mcp.server.mcpserver import MCPServer
+    HAS_MCPSERVER = True
 except ImportError:
-    HAS_FASTMCP = False
+    HAS_MCPSERVER = False
 
 # Import triage scoring logic directly from main FastAPI app
 from main import load_model, score_page, PageInput
@@ -20,8 +20,8 @@ from main import load_model, score_page, PageInput
 # Initialize model
 load_model()
 
-if HAS_FASTMCP:
-    mcp = FastMCP("FlyRank SEO Triage Agent Tool")
+if HAS_MCPSERVER:
+    mcp = MCPServer("FlyRank SEO Triage Agent Tool")
 
     @mcp.tool(
         name="flyrank_triage_page",
@@ -74,7 +74,8 @@ def run_standalone_agent_cli():
         print(json.dumps(res_dict, indent=2))
 
 if __name__ == "__main__":
-    if HAS_FASTMCP and "--cli" not in sys.argv:
+    if HAS_MCPSERVER and "--cli" not in sys.argv:
         mcp.run()
     else:
         run_standalone_agent_cli()
+

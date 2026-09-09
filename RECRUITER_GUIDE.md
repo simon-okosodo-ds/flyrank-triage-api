@@ -55,18 +55,19 @@ graph TD
 **Model Context Protocol (MCP)** is the open standard developed to connect AI LLMs (Claude Desktop, Gemini, LangChain, AutoGen) directly to external tools and APIs safely.
 
 ### How the Agent Slot Works
-1. `mcp_server.py` wraps the FastAPI prediction service as an MCP Tool named `flyrank_triage_page`.
+1. `mcp_server.py` wraps the FastAPI prediction service as an MCP Tool named `flyrank_triage_page` using MCP v2 `MCPServer` (`from mcp.server.mcpserver import MCPServer`).
 2. An autonomous AI Agent (e.g. an automated SEO Optimization Agent) periodically audits website analytics.
-3. When the agent detects low performance on a URL, it invokes `flyrank_triage_page` via MCP.
-4. The agent receives the response:
+3. When the agent detects performance metrics on a URL, it invokes `flyrank_triage_page` via MCP.
+4. If invalid parameters are passed (e.g. `impressions=0`), the endpoint enforces strict 422 refusal (`Zero impressions — insufficient search signal to score page.`).
+5. For valid inputs (e.g. `impressions=5000, clicks=40, avg_position=15, in_striking_distance=1, has_real_volume=1`), the agent receives the verified structured triage response:
    ```json
    {
-     "model_score": 0.54,
+     "model_score": 0.532,
      "diagnosis": "ctr_fixable",
      "action": "review_title_and_meta"
    }
    ```
-5. Based on `review_title_and_meta`, the AI Agent autonomously drafts revised H1/Meta description tags and submits a pull request or notifies the content team on Slack.
+6. Based on `review_title_and_meta`, the AI Agent autonomously drafts revised H1/Meta description tags and submits a pull request or notifies the content team on Slack.
 
 ---
 

@@ -82,7 +82,7 @@ curl -X POST "https://flyrank-triage-api.onrender.com/score" \
 
 ## 🤖 MCP Agent Integration
 
-To run the Model Context Protocol server for AI Agents (Claude Desktop, Gemini, LangChain):
+To run the Model Context Protocol (v2 `MCPServer`) server for AI Agents (Claude Desktop, Gemini, LangChain):
 ```bash
 python mcp_server.py
 ```
@@ -90,7 +90,11 @@ To test the standalone MCP CLI sample mode locally:
 ```bash
 python mcp_server.py --cli --sample
 ```
-This exposes the tool `flyrank_triage_page` for agent invocation, which evaluates page performance metrics (`impressions`, `clicks`, `avg_position`, `in_striking_distance`, `has_real_volume`) and returns structured triage responses (`model_score`, `diagnosis`, `action`). See [RECRUITER_GUIDE.md](RECRUITER_GUIDE.md) for full architecture details.
+This exposes the tool `flyrank_triage_page` via MCP v2 (`from mcp.server.mcpserver import MCPServer`), which evaluates page performance metrics (`impressions`, `clicks`, `avg_position`, `in_striking_distance`, `has_real_volume`) and returns structured triage responses (`model_score`, `diagnosis`, `action`). Verified working on MCP v2.2+:
+- **Refusal Enforcement**: Requesting `impressions=0` triggers 422 refusal (`Zero impressions — insufficient search signal to score page.`).
+- **Valid Inference**: Valid inputs (e.g. `impressions=5000`, `clicks=40`, `avg_position=15`) return structured triage outputs (`model_score: 0.532`, `diagnosis: ctr_fixable`, `action: review_title_and_meta`).
+
+See [RECRUITER_GUIDE.md](RECRUITER_GUIDE.md) for full architecture details.
 
 ---
 
