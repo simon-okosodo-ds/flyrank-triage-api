@@ -63,7 +63,7 @@ curl -X POST "https://flyrank-triage-api.onrender.com/score" \
 **Sample JSON Response**:
 ```json
 {
-  "model_score": 0.742,
+  "model_score": 0.53,
   "diagnosis": "ctr_fixable",
   "action": "review_title_and_meta",
   "details": {
