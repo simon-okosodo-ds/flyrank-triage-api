@@ -111,6 +111,31 @@ def test_batch_scoring():
     assert len(res_list) == 2
     print(f"[OK] Batch scoring test passed. Evaluated {len(res_list)} pages.")
 
+def test_api_key_verification():
+    """Verify X-API-Key validation logic (valid, invalid, missing)."""
+    from main import verify_api_key, DEFAULT_DEMO_KEY
+    
+    # 1. Valid Key
+    assert verify_api_key(DEFAULT_DEMO_KEY) == DEFAULT_DEMO_KEY
+    
+    # 2. Invalid Key -> 401 Unauthorized
+    try:
+        verify_api_key("invalid-secret-key")
+        assert False, "Should have raised 401 for invalid key"
+    except HTTPException as e:
+        assert e.status_code == 401
+        assert "Invalid API Key" in e.detail
+
+    # 3. Missing Key -> 401 Unauthorized
+    try:
+        verify_api_key(None)
+        assert False, "Should have raised 401 for missing key"
+    except HTTPException as e:
+        assert e.status_code == 401
+        assert "Missing API Key" in e.detail
+
+    print("[OK] API key security verification test passed.")
+
 def test_mcp_standalone_cli():
     """Verify MCP standalone execution module."""
     from mcp_server import score_page as mcp_score, PageInput as MCPInput
@@ -131,6 +156,7 @@ if __name__ == "__main__":
     test_model_file_exists()
     test_model_loading_and_prediction()
     test_health_endpoint()
+    test_api_key_verification()
     test_score_endpoint_valid()
     test_score_endpoint_prior_period_decline()
     test_score_endpoint_zero_position_rejection()

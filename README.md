@@ -4,6 +4,7 @@
 [![Python 3.11](https://img.shields.io/badge/Python-3.11+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.6.1-F7931E.svg?style=flat&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
 [![MCP Ready](https://img.shields.io/badge/MCP-Agent%20Ready-6B46C1.svg?style=flat)](https://modelcontextprotocol.io)
+[![API Security](https://img.shields.io/badge/Security-X--API--Key%20Protected-green.svg?style=flat)](https://fastapi.tiangolo.com)
 
 A live scoring endpoint for FlyRank's diagnosis-first content triage model — ranks pages by likelihood of improvement and diagnoses why they're underperforming.
 
@@ -18,6 +19,18 @@ POST to `/score` with a page's features (`impressions`, `clicks`, `avg_position`
 - **`model_score`**: Probability the page is worth reviewing.
 - **`diagnosis`**: Performance classification (`genuine_decline` / `likely_serp_answered` / `ctr_fixable` / `stable_or_improving`).
 - **`action`**: Recommended editor action (`refresh_or_rewrite` / `flag_for_human_review_only` / `review_title_and_meta` / `no_action`).
+
+---
+
+## 🔐 API Security & Authentication
+
+This API implements enterprise **`X-API-Key`** header authentication via FastAPI security dependencies.
+
+* **Live Demo Key:** **`flyrank-demo-key`** (Pre-configured for instant zero-friction evaluation).
+* **OpenAPI Docs Integration:** Visit `/docs` and click the **Authorize 🔓** button in the upper right corner to enter `flyrank-demo-key`.
+* **Environment Configuration:**
+  - `REQUIRE_API_KEY`: Set to `true` (default) or `false` (disables auth).
+  - `VALID_API_KEYS`: Comma-separated list of accepted API keys.
 
 ---
 
@@ -51,6 +64,7 @@ Open [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs) in your browser fo
 ```bash
 curl -X POST "https://flyrank-triage-api.onrender.com/score" \
      -H "Content-Type: application/json" \
+     -H "X-API-Key: flyrank-demo-key" \
      -d '{
            "impressions": 450.0,
            "clicks": 12.0,

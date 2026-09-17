@@ -1,6 +1,7 @@
 import os
 from typing import List, Optional
-from fastapi import FastAPI, HTTPException, status
+from fastapi import FastAPI, HTTPException, status, Security, Depends
+from fastapi.security import APIKeyHeader
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel, Field
@@ -9,11 +10,43 @@ import pandas as pd
 import numpy as np
 from huggingface_hub import hf_hub_download
 
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+DEFAULT_DEMO_KEY = "flyrank-demo-key"
+
+def verify_api_key(api_key: Optional[str] = Security(api_key_header)) -> str:
+    """Validates X-API-Key request header against configured allowed keys."""
+    require_key = os.getenv("REQUIRE_API_KEY", "true").lower() in ("true", "1", "yes")
+    if not require_key:
+        return api_key or DEFAULT_DEMO_KEY
+
+    valid_keys_env = os.getenv("VALID_API_KEYS", DEFAULT_DEMO_KEY)
+    valid_keys = [k.strip() for k in valid_keys_env.split(",") if k.strip()]
+
+    if not api_key:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Missing API Key. Provide header '{API_KEY_NAME}: {DEFAULT_DEMO_KEY}' to authenticate.",
+            headers={"WWW-Authenticate": API_KEY_NAME},
+        )
+
+    if api_key not in valid_keys:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"Invalid API Key '{api_key}'. Pre-configured demo key is '{DEFAULT_DEMO_KEY}'.",
+            headers={"WWW-Authenticate": API_KEY_NAME},
+        )
+
+    return api_key
+
 app = FastAPI(
     title="FlyRank SEO Triage API & Interactive AI Engine",
     description=(
         "Live model serving endpoint for FlyRank's trained Logistic Regression classifier. "
-        "Transforms Search Console metrics into real-time content triage decisions."
+        "Transforms Search Console metrics into real-time content triage decisions.\n\n"
+        "🔑 **Enterprise API Security:**\n"
+        "Endpoints require an `X-API-Key` header. For live testing, use the pre-configured demo key: "
+        "**`flyrank-demo-key`** (or click the green **Authorize 🔓** button at the top right of this page)."
     ),
     version="1.0.0",
     docs_url="/docs",
@@ -178,7 +211,7 @@ def health_check():
         "docs_url": "/docs"
     }
 
-@app.get("/score", summary="Score page via GET query parameters or view instructions")
+@app.get("/score", summary="Score page via GET query parameters or view instructions", dependencies=[Security(verify_api_key)])
 def score_page_get(
     impressions: Optional[float] = None,
     clicks: Optional[float] = None,
@@ -195,8 +228,10 @@ def score_page_get(
             "message": "The /score endpoint accepts POST requests with a JSON body, or GET requests with query parameters.",
             "interactive_dashboard": "/",
             "swagger_docs": "/docs",
-            "example_get_url": "/score?impressions=450&clicks=12&avg_position=14.2&in_striking_distance=1&has_real_volume=1",
-            "example_curl_post": "curl -X POST 'https://flyrank-triage-api.onrender.com/score' -H 'Content-Type: application/json' -d '{\"impressions\":450,\"clicks\":12,\"avg_position\":14.2,\"in_striking_distance\":1,\"has_real_volume\":1}'"
+            "api_key_required": True,
+            "demo_api_key": DEFAULT_DEMO_KEY,
+            "example_get_url": f"/score?impressions=450&clicks=12&avg_position=14.2&in_striking_distance=1&has_real_volume=1",
+            "example_curl_post": f"curl -X POST 'https://flyrank-triage-api.onrender.com/score' -H 'Content-Type: application/json' -H 'X-API-Key: {DEFAULT_DEMO_KEY}' -d '{{\"impressions\":450,\"clicks\":12,\"avg_position\":14.2,\"in_striking_distance\":1,\"has_real_volume\":1}}'"
         }
     
     page = PageInput(
@@ -210,7 +245,7 @@ def score_page_get(
     )
     return score_page(page)
 
-@app.post("/score", response_model=TriageResponse, summary="Score single page SEO triage request")
+@app.post("/score", response_model=TriageResponse, summary="Score single page SEO triage request", dependencies=[Security(verify_api_key)])
 def score_page(page: PageInput):
     if model is None:
         raise HTTPException(
@@ -271,7 +306,7 @@ def score_page(page: PageInput):
         }
     )
 
-@app.post("/score/batch", response_model=List[TriageResponse], summary="Batch score multiple pages")
+@app.post("/score/batch", response_model=List[TriageResponse], summary="Batch score multiple pages", dependencies=[Security(verify_api_key)])
 def score_batch(pages: List[PageInput]):
     return [score_page(p) for p in pages]
 
@@ -385,6 +420,11 @@ def serve_dashboard():
 
                 <form id="triageForm">
                     <div class="form-group">
+                        <label>X-API-Key Header <span>Authentication</span></label>
+                        <input type="text" id="api_key" value="flyrank-demo-key" required style="letter-spacing:0.5px; font-family:'JetBrains Mono', monospace; border-color:#3b82f6;">
+                        <span style="font-size:0.75rem; color:#34d399; margin-top:0.3rem; display:block;">🔒 Pre-loaded with demo key for instant evaluation</span>
+                    </div>
+                    <div class="form-group">
                         <label>Monthly Impressions <span>GSC Search Volume</span></label>
                         <input type="number" id="impressions" value="450" required min="1">
                     </div>
@@ -443,7 +483,7 @@ def serve_dashboard():
                 </div>
 
                 <div class="code-box" id="codeSnippet">
-curl -X POST "https://flyrank-triage-api.onrender.com/score" -H "Content-Type: application/json" -d '{"impressions":450,"clicks":12,"avg_position":14.2,"in_striking_distance":1,"has_real_volume":1}'
+curl -X POST "https://flyrank-triage-api.onrender.com/score" -H "Content-Type: application/json" -H "X-API-Key: flyrank-demo-key" -d '{"impressions":450,"clicks":12,"avg_position":14.2,"in_striking_distance":1,"has_real_volume":1}'
                 </div>
             </div>
         </div>
@@ -480,6 +520,7 @@ curl -X POST "https://flyrank-triage-api.onrender.com/score" -H "Content-Type: a
 
         document.getElementById('triageForm').addEventListener('submit', async (e) => {
             e.preventDefault();
+            const apiKey = document.getElementById('api_key').value.trim() || 'flyrank-demo-key';
             const body = {
                 impressions: parseFloat(document.getElementById('impressions').value),
                 clicks: parseFloat(document.getElementById('clicks').value),
@@ -491,7 +532,10 @@ curl -X POST "https://flyrank-triage-api.onrender.com/score" -H "Content-Type: a
             try {
                 const res = await fetch('/score', {
                     method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'X-API-Key': apiKey
+                    },
                     body: JSON.stringify(body)
                 });
                 const data = await res.json();
@@ -509,9 +553,9 @@ curl -X POST "https://flyrank-triage-api.onrender.com/score" -H "Content-Type: a
                     document.getElementById('ctrVal').innerText = (data.details.ctr * 100).toFixed(2) + '%';
 
                     document.getElementById('codeSnippet').innerText = 
-                        `curl -X POST "https://flyrank-triage-api.onrender.com/score" -H "Content-Type: application/json" -d '${JSON.stringify(body)}'`;
+                        `curl -X POST "https://flyrank-triage-api.onrender.com/score" -H "Content-Type: application/json" -H "X-API-Key: ${apiKey}" -d '${JSON.stringify(body)}'`;
                 } else {
-                    alert("Validation Error: " + (data.detail || "Invalid input"));
+                    alert("API Error (" + res.status + "): " + (data.detail || "Invalid request or authentication error"));
                 }
             } catch(err) {
                 console.error(err);

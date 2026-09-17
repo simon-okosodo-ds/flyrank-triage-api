@@ -23,17 +23,22 @@ Many Machine Learning projects remain locked inside Jupyter Notebooks (`model.ip
 
 ```mermaid
 graph TD
-    A[Search Console / User Input] -->|JSON Payload| B[FastAPI Endpoint /score]
+    A[Search Console / User Input] -->|JSON Payload + X-API-Key| B[FastAPI Security Middleware verify_api_key]
     C[AI Agent / Claude / LangChain] -->|MCP Tool Protocol| D[MCP Server mcp_server.py]
     D --> B
-    B --> E[Pydantic Schema Validation]
+    B -->|Authorized| E[Pydantic Schema Validation]
     E --> F[Logistic Regression Classifier model.pkl + scaler.pkl]
     F -->|predict_proba| G[Model Score Calculation]
     G --> H[Diagnostic Engine & Action Mapper]
     H -->|JSON Response| I[model_score + diagnosis + action]
 ```
 
-### 1. Feature Specifications (5 Core Features)
+### 1. Enterprise API Security Layer
+- **`X-API-Key` Authentication:** Enforced via FastAPI's `Security(verify_api_key)` dependency and `APIKeyHeader` scheme.
+- **Zero-Friction Demo Experience:** Live environments accept a pre-configured demo key (`flyrank-demo-key`) pre-filled in the web dashboard UI and featured prominently at `/docs`.
+- **Dynamic Configuration:** Security behavior is dynamically configurable via environment variables (`REQUIRE_API_KEY=true|false`, `VALID_API_KEYS=key1,key2`).
+
+### 2. Feature Specifications (5 Core Features)
 | Feature Name | Type | Description |
 | :--- | :--- | :--- |
 | `impressions` | `float` | Monthly Google Search Console impression count |

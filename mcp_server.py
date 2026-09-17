@@ -15,7 +15,7 @@ except ImportError:
     HAS_MCPSERVER = False
 
 # Import triage scoring logic directly from main FastAPI app
-from main import load_model, score_page, PageInput
+from main import load_model, score_page, PageInput, DEFAULT_DEMO_KEY
 
 # Initialize model
 load_model()
@@ -38,7 +38,8 @@ if HAS_MCPSERVER:
         in_striking_distance: int = 0,
         has_real_volume: int = 0,
         impressions_prior: float = None,
-        clicks_prior: float = None
+        clicks_prior: float = None,
+        api_key: str = DEFAULT_DEMO_KEY
     ) -> Dict[str, Any]:
         input_data = PageInput(
             impressions=impressions,
