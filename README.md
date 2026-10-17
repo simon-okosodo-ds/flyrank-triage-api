@@ -3,12 +3,14 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python 3.11](https://img.shields.io/badge/Python-3.11+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.6.1-F7931E.svg?style=flat&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![Microsoft Azure](https://img.shields.io/badge/Azure-Container%20Apps-0089D6.svg?style=flat&logo=microsoftazure&logoColor=white)](AZURE_DEPLOYMENT_GUIDE.md)
 [![MCP Ready](https://img.shields.io/badge/MCP-Agent%20Ready-6B46C1.svg?style=flat)](https://modelcontextprotocol.io)
 [![API Security](https://img.shields.io/badge/Security-X--API--Key%20Protected-green.svg?style=flat)](https://fastapi.tiangolo.com)
 
 A live scoring endpoint for FlyRank's diagnosis-first content triage model — ranks pages by likelihood of improvement and diagnoses why they're underperforming.
 
-🌐 **Live Production Endpoint:** [https://flyrank-triage-api.onrender.com/docs](https://flyrank-triage-api.onrender.com/docs)  
+🌐 **Live Render Endpoint:** [https://flyrank-triage-api.onrender.com/docs](https://flyrank-triage-api.onrender.com/docs)  
+☁️ **Azure Deployment Guide:** [AZURE_DEPLOYMENT_GUIDE.md](AZURE_DEPLOYMENT_GUIDE.md)  
 📄 **Research Paper & Methodology:** [https://simon-okosodo-ds.github.io/flyrank-ml-internship-starter/](https://simon-okosodo-ds.github.io/flyrank-ml-internship-starter/)
 
 ---
@@ -39,10 +41,10 @@ This API implements enterprise **`X-API-Key`** header authentication via FastAPI
 - **Deployed container uses lightweight Logistic Regression model (`model.pkl` & `scaler.pkl`).**  
   The live API serves the calibrated Logistic Regression model and `StandardScaler` binary (`1.6 KB` total) bundled directly with the repository, ensuring zero OOM errors and instant startup on Render Free Tier (<20MB RAM).
 - **Research Benchmark vs. Production Serving**:  
-  While the offline research paper validates a 200-tree Random Forest classifier (`n_estimators=200`, `Precision@50 = 0.820`), deploying a 159 MB (compressed) / ~996 MB (uncompressed) Random Forest model on Render free-tier exceeds the 512 MB RAM limit. The calibrated Logistic Regression model is deployed for production container safety, while Random Forest remains the validated research result in the paper.
+  While the offline research paper validates a 200-tree Random Forest classifier (`n_estimators=200`, `Precision@50 = 0.892 ± 0.065`), deploying a 159 MB (compressed) / ~996 MB (uncompressed) Random Forest model on Render free-tier exceeds the 512 MB RAM limit. The calibrated Logistic Regression model is deployed for production container safety, while Random Forest remains the validated research result in the paper.
 - **No-go checks are enforced, not just documented.**  
   `avg_position=0` and `impressions=0` are refused outright (`422` validation error) rather than scored, per the data-dictionary's warning that `avg_position=0` means "no data," not rank zero.
-- **This snapshot has no prior-period value at inference time**, so the diagnosis logic runs on the current values only — a real month-over-month diagnosis (as used in the paper) needs a prior window this simple endpoint doesn't yet accept as input.
+- **Prior-period comparison is supported**: Pass optional `impressions_prior` and `clicks_prior` fields for month-over-month diagnosis (`genuine_decline` vs. `likely_serp_answered`).
 - **Free-tier hosting spins down after 15 minutes of inactivity** — the first request after idle time may take 30-60 seconds to respond.
 
 ---
@@ -104,7 +106,7 @@ To test the standalone MCP CLI sample mode locally:
 ```bash
 python mcp_server.py --cli --sample
 ```
-This exposes the tool `flyrank_triage_page` via MCP v2 (`from mcp.server.mcpserver import MCPServer`), which evaluates page performance metrics (`impressions`, `clicks`, `avg_position`, `in_striking_distance`, `has_real_volume`) and returns structured triage responses (`model_score`, `diagnosis`, `action`). Verified working on MCP v2.2+:
+This exposes the tool `flyrank_triage_page` via MCP (`from mcp.server.fastmcp import FastMCP`), which evaluates page performance metrics (`impressions`, `clicks`, `avg_position`, `in_striking_distance`, `has_real_volume`) and returns structured triage responses (`model_score`, `diagnosis`, `action`).
 - **Refusal Enforcement**: Requesting `impressions=0` triggers 422 refusal (`Zero impressions — insufficient search signal to score page.`).
 - **Valid Inference**: Valid inputs (e.g. `impressions=5000`, `clicks=40`, `avg_position=15`) return structured triage outputs (`model_score: 0.532`, `diagnosis: ctr_fixable`, `action: review_title_and_meta`).
 

@@ -48,7 +48,7 @@ app = FastAPI(
         "Endpoints require an `X-API-Key` header. For live testing, use the pre-configured demo key: "
         "**`flyrank-demo-key`** (or click the green **Authorize 🔓** button at the top right of this page)."
     ),
-    version="1.0.0",
+    version="1.1.0",
     docs_url="/docs",
     redoc_url="/redoc",
 )
@@ -66,7 +66,7 @@ SCALER_PATH = os.getenv("SCALER_PATH", "scaler.pkl")
 HF_REPO_ID = os.getenv("HF_REPO_ID", "simon-okosodo-ds/flyrank-triage-model")
 MODEL_URL = os.getenv(
     "MODEL_URL",
-    "https://github.com/simon-okosodo-ds/flyrank-triage-api/releases/download/v1.0.0/Flyrank_lr.pkl"
+    "https://media.githubusercontent.com/media/simon-okosodo-ds/flyrank-triage-api/main/Flyrank_lr.pkl"
 )
 
 model = None
@@ -275,7 +275,8 @@ def score_page(page: PageInput):
         X_scaled = scaler.transform(features_df) if scaler is not None else features_df
         proba = model.predict_proba(X_scaled)[:, 1][0]
         model_score = round(float(proba), 3)
-    except Exception:
+    except Exception as e:
+        print(f"DataFrame input failed ({e}), retrying with numpy array input.")
         X_scaled = scaler.transform(features_df.values) if scaler is not None else features_df.values
         proba = model.predict_proba(X_scaled)[:, 1][0]
         model_score = round(float(proba), 3)
@@ -400,6 +401,7 @@ def serve_dashboard():
             </div>
             <div class="nav-links">
                 <a href="/docs" target="_blank" class="btn-nav">⚡ OpenAPI Docs</a>
+                <a href="https://simon-okosodo-ds.github.io/flyrank-ml-internship-starter/" target="_blank" class="btn-nav">📄 Research Paper</a>
                 <a href="https://github.com/simon-okosodo-ds/flyrank-triage-api" target="_blank" class="btn-nav">💻 GitHub Repo</a>
             </div>
         </header>

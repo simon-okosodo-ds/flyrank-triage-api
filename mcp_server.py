@@ -9,10 +9,10 @@ import asyncio
 from typing import Dict, Any
 
 try:
-    from mcp.server.mcpserver import MCPServer
-    HAS_MCPSERVER = True
+    from mcp.server.fastmcp import FastMCP
+    HAS_MCP = True
 except ImportError:
-    HAS_MCPSERVER = False
+    HAS_MCP = False
 
 # Import triage scoring logic directly from main FastAPI app
 from main import load_model, score_page, PageInput, DEFAULT_DEMO_KEY
@@ -20,17 +20,10 @@ from main import load_model, score_page, PageInput, DEFAULT_DEMO_KEY
 # Initialize model
 load_model()
 
-if HAS_MCPSERVER:
-    mcp = MCPServer("FlyRank SEO Triage Agent Tool")
+if HAS_MCP:
+    mcp = FastMCP("FlyRank SEO Triage Agent Tool")
 
-    @mcp.tool(
-        name="flyrank_triage_page",
-        description=(
-            "Evaluates SEO performance of a web page using FlyRank's Logistic Regression classifier. "
-            "Inputs GSC impressions, clicks, avg_position, in_striking_distance (0/1), and has_real_volume (0/1). "
-            "Returns model_score, performance diagnosis, and actionable content decision."
-        )
-    )
+    @mcp.tool()
     def flyrank_triage_page(
         impressions: float,
         clicks: float,
@@ -39,8 +32,13 @@ if HAS_MCPSERVER:
         has_real_volume: int = 0,
         impressions_prior: float = None,
         clicks_prior: float = None,
-        api_key: str = DEFAULT_DEMO_KEY
     ) -> Dict[str, Any]:
+        """
+        Evaluates SEO performance of a web page using FlyRank's Logistic Regression classifier.
+        Inputs GSC impressions, clicks, avg_position, in_striking_distance (0/1), and has_real_volume (0/1).
+        Returns model_score, performance diagnosis, and actionable content decision.
+        Refusal: impressions=0 or avg_position=0 trigger 422 validation errors.
+        """
         input_data = PageInput(
             impressions=impressions,
             clicks=clicks,
@@ -75,8 +73,7 @@ def run_standalone_agent_cli():
         print(json.dumps(res_dict, indent=2))
 
 if __name__ == "__main__":
-    if HAS_MCPSERVER and "--cli" not in sys.argv:
+    if HAS_MCP and "--cli" not in sys.argv:
         mcp.run()
     else:
         run_standalone_agent_cli()
-
