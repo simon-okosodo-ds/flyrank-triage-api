@@ -76,28 +76,21 @@ graph TD
 
 ---
 
-## 🌐 Free-Tier Cloud Deployment Guide
+## 🌐 Live Deployment & Infrastructure
 
-This repository is optimized for 100% free deployment across **Microsoft Azure**, **Render**, or **Hugging Face Spaces**.
+This API is containerised with Docker and deployed for production on **Render**, a free-tier cloud platform. The repository is also configured for zero-cost deployment on **Koyeb** using the same `Dockerfile` — no credit card required on either platform.
 
-### Option A: Deploying to Microsoft Azure Container Apps (Recommended for Multi-Cloud CVs)
-1. **Always Free Grant**: **180,000 vCPU-seconds + 2 Million HTTP requests** free every month forever.
-2. **Scale-to-Zero**: Automatic scaling down to zero when idle ($0 cost).
-3. **Automated CI/CD**: Includes a pre-configured GitHub Actions workflow in `.github/workflows/deploy-azure.yml`.
-4. **Step-by-step Setup**: See [AZURE_DEPLOYMENT_GUIDE.md](AZURE_DEPLOYMENT_GUIDE.md) for full instructions.
+### Live Production Endpoint — Render
+The API is live at **[https://flyrank-triage-api.onrender.com](https://flyrank-triage-api.onrender.com)**, served as a Docker container on Render's free web service tier.
 
-### Option B: Deploying to Render (Free Web Service)
-1. **Create Web Service**: Connect your GitHub repository to [Render Dashboard](https://dashboard.render.com/).
-2. **Settings**:
-   - Environment: `Docker` (uses included `Dockerfile`) or `Python` (uses `render.yaml`).
-   - Build Command: `pip install -r requirements.txt`
-   - Start Command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-3. Click **Deploy**. Render generates a public URL `https://flyrank-triage-api.onrender.com`.
+**Infrastructure highlights:**
+- `render.yaml` defines the full service configuration as infrastructure-as-code — environment variables, model paths, and Hugging Face Hub integration are all declaratively specified, not hardcoded.
+- The `Dockerfile` targets `python:3.11-slim` for a minimal, reproducible image.
+- The three-tier model fallback (local file → Hugging Face Hub → GitHub LFS CDN) ensures the model loads reliably even on cold container starts.
+- The service scales to zero on inactivity, with a documented ~30–60 second cold-start on first request after idle — a standard free-tier trade-off explicitly noted in the API's health response.
 
-### Option C: Deploying to Koyeb (100% Free - Zero Credit Card Required)
-1. **Create Account**: Sign up at [app.koyeb.com](https://app.koyeb.com/) using your GitHub account (**no payment method required**).
-2. **Deploy**: Select **GitHub** repo `flyrank-triage-api`, select **Dockerfile**, set Port to `10000`, and click **Deploy**.
-3. Once deployed, Koyeb generates a public URL for your live API.
+### Alternative Deployment — Koyeb (Zero Credit Card Required)
+The repository is pre-configured for one-click deployment on [Koyeb](https://app.koyeb.com/) using the included `Dockerfile`. Port `10000` is set consistently across the Dockerfile and Koyeb's expected configuration, making the switch from Render to Koyeb a single-click operation with no code changes.
 
 ---
 

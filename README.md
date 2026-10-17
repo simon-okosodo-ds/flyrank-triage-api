@@ -3,14 +3,12 @@
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.110+-009688.svg?style=flat&logo=FastAPI&logoColor=white)](https://fastapi.tiangolo.com)
 [![Python 3.11](https://img.shields.io/badge/Python-3.11+-3776AB.svg?style=flat&logo=python&logoColor=white)](https://www.python.org/)
 [![scikit-learn](https://img.shields.io/badge/scikit--learn-1.6.1-F7931E.svg?style=flat&logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
-[![Microsoft Azure](https://img.shields.io/badge/Azure-Container%20Apps-0089D6.svg?style=flat&logo=microsoftazure&logoColor=white)](AZURE_DEPLOYMENT_GUIDE.md)
 [![MCP Ready](https://img.shields.io/badge/MCP-Agent%20Ready-6B46C1.svg?style=flat)](https://modelcontextprotocol.io)
 [![API Security](https://img.shields.io/badge/Security-X--API--Key%20Protected-green.svg?style=flat)](https://fastapi.tiangolo.com)
 
 A live scoring endpoint for FlyRank's diagnosis-first content triage model — ranks pages by likelihood of improvement and diagnoses why they're underperforming.
 
 🌐 **Live Render Endpoint:** [https://flyrank-triage-api.onrender.com/docs](https://flyrank-triage-api.onrender.com/docs)  
-☁️ **Azure Deployment Guide:** [AZURE_DEPLOYMENT_GUIDE.md](AZURE_DEPLOYMENT_GUIDE.md)  
 📄 **Research Paper & Methodology:** [https://simon-okosodo-ds.github.io/flyrank-ml-internship-starter/](https://simon-okosodo-ds.github.io/flyrank-ml-internship-starter/)
 
 ---
