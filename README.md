@@ -94,21 +94,28 @@ curl -X POST "https://flyrank-triage-api.onrender.com/score" \
 
 ---
 
-## 🤖 MCP Agent Integration
+## 🤖 ## MCP & AI Agent Integration
 
-To run the Model Context Protocol (v2 `MCPServer`) server for AI Agents (Claude Desktop, Gemini, LangChain):
+Exposes the FlyRank ML triage API as an MCP tool, allowing compatible AI applications and agents to access ML predictions without manually entering metrics through the API website.
+
+**How it works**
+1. **Run the model:** Submit page metrics (`impressions`, `clicks`, `avg_position`, etc.) to receive a `model_score`, `diagnosis`, and recommended `action`.
+2. **Connect through MCP:** The `flyrank_triage_page` tool lets compatible AI applications call the prediction service using a standardized interface.
+3. **Enable agent workflows:** When connected to analytics and other tools, an AI agent can retrieve page metrics, run ML triage, interpret results, draft improved titles and meta descriptions, and notify a team or prepare a pull request for approval.
+
+**Run & test**
 ```bash
 python mcp_server.py
-```
-To test the standalone MCP CLI sample mode locally:
-```bash
 python mcp_server.py --cli --sample
 ```
-This exposes the tool `flyrank_triage_page` via MCP (`from mcp.server.fastmcp import FastMCP`), which evaluates page performance metrics (`impressions`, `clicks`, `avg_position`, `in_striking_distance`, `has_real_volume`) and returns structured triage responses (`model_score`, `diagnosis`, `action`).
-- **Refusal Enforcement**: Requesting `impressions=0` triggers 422 refusal (`Zero impressions — insufficient search signal to score page.`).
-- **Valid Inference**: Valid inputs (e.g. `impressions=5000`, `clicks=40`, `avg_position=15`) return structured triage outputs (`model_score: 0.532`, `diagnosis: ctr_fixable`, `action: review_title_and_meta`).
 
-See [RECRUITER_GUIDE.md](RECRUITER_GUIDE.md) for full architecture details.
+**Example inference:** `5,000` impressions, `40` clicks, average position `15` → `model_score: 0.532`, `diagnosis: ctr_fixable`, `action: review_title_and_meta`.
+
+**Refusal enforcement:** `impressions=0` triggers a 422 refusal due to insufficient search signal.
+
+MCP makes the model accessible to AI tools; the agent coordinates the workflow. Analytics access, integrations, and permissions must be configured separately.
+
+**Architecture details:** [RECRUITER_GUIDE.md](https://github.com/simon-okosodo-ds/flyrank-triage-api/blob/main/RECRUITER_GUIDE.md)
 
 ---
 
