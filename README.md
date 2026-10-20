@@ -94,7 +94,7 @@ curl -X POST "https://flyrank-triage-api.onrender.com/score" \
 
 ---
 
-## 🤖 ## MCP & AI Agent Integration
+## 🤖 MCP & AI Agent Integration
 
 Exposes the FlyRank ML triage API as an MCP tool, allowing compatible AI applications and agents to access ML predictions without manually entering metrics through the API website.
 
